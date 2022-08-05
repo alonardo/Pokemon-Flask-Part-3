@@ -47,7 +47,7 @@ def edit_profile():
                 "password":form.password.data,
                 "icon":int(form.icon.data) if int(form.icon.data) != 9000 else current_user.icon
             }
-        user = User.query.filter_by(email=edited_user_data['email']).first()
+        user = User.filter_by(email=edited_user_data['email']).first()
         if user and user.email != current_user.email:
             flash('Email already exists!', 'danger')
             return redirect(url_for('auth.edit_profile'))

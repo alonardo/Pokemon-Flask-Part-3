@@ -4,10 +4,10 @@ from flask_login import UserMixin # Only for user model
 from datetime import datetime as dt
 from werkzeug.security import generate_password_hash, check_password_hash
 
-user_pokemon = db.Table("user_pokemon",
-    db.Column("poke_id", db.Integer, db.ForeignKey("pokemon.id")),
-    db.Column("user_id", db.Integer, db.ForeignKey("user.id"))
-)
+# user_poke = db.Table("user_poke",
+#     db.Column("pokemon_id", db.Integer, db.ForeignKey("pokemon.id")),
+#     db.Column("user_id", db.Integer, db.ForeignKey("user.id"))
+# )
 
 class User(UserMixin, db.Model):
     __tablename__ = 'user'
@@ -19,11 +19,7 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String)
     created_on = db.Column(db.DateTime, default=dt.utcnow)
     icon = db.Column(db.Integer)
-    pokemon = db.relationship(
-    "Pokemon",
-    secondary=user_pokemon,
-    backref="user_poke",
-    )
+    pokemon = db.Column(db.Integer, db.ForeignKey('pokemon.id'))
 
     # This should return a unique id string
     def __repr__(self):
@@ -54,7 +50,14 @@ class User(UserMixin, db.Model):
     
     def get_icon(self):
         return f'https://avatars.dicebear.com/api/personas/{self.icon}.svg'
-    
+
+    def catch_pokemon(self, poke_dict):
+        self.name = poke_dict['name']
+        self.ability = poke_dict['ability']
+        self.base_experience = poke_dict['base_experience']
+        self.attack_base_stat = poke_dict['attack_base_stat']
+        self.hp_base_stat = poke_dict['hp_base_stat']
+        self.defense_stat = poke_dict['defense_stat']
 
 @login.user_loader
 def load_user(id):
@@ -63,21 +66,30 @@ def load_user(id):
 class Pokemon(db.Model):
     __tablename__ = 'pokemon'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True)
-
+    id= db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    ability = db.Column(db.String)
+    base_experience = db.Column(db.String)
+    attack_base_stat = db.Column(db.String)
+    hp_base_stat = db.Column(db.String)
+    defense_stat = db.Column(db.String)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
     def __repr__(self):
-        return f'<User: {self.name}> | {self.id}'
+        return f'<Pokemon: {self.name}> | Id: {self.id}'
 
-    def pokemon_to_database(self, poke_dict):
+    def from_dict(self, poke_dict):
         self.name = poke_dict['name']
         self.ability = poke_dict['ability']
         self.base_experience = poke_dict['base_experience']
         self.attack_base_stat = poke_dict['attack_base_stat']
         self.hp_base_stat = poke_dict['hp_base_stat']
-        self.defense_stat = poke_dict['defense_stat']
+        self.defense_stat = poke_dict['defense_stat']  
 
     def save_poke(self):
         db.session.add(self)
         db.session.commit()
     
+    def delete_pokemon(self):
+        db.session.delete(self)
+        db.session.commit()
